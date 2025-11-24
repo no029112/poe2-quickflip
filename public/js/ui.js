@@ -1,4 +1,4 @@
-import { $, fmt, percentile } from './utils.js';
+import { $, fmt, percentile, isFav, toggleFav } from './utils.js';
 import { getState } from './state.js';
 import { CATS } from './constants.js';
 
@@ -107,6 +107,9 @@ export function buildRows(items){
         if(s.maxB>0 && B!=null && B>s.maxB) continue;
       }
 
+      // Filter favorites
+      if(s.showFav && !isFav(name)) continue;
+
       // BlockGap: ใช้แนวคิด approx จากฝั่งบทความ
       const bgB = (p10!=null && p25!=null && p25>0)? ((p25 - p10)/p25)*100 : null;            // ช่องว่างเหนือ aggressive-bid
       const bgS = (sell!=null && p50!=null && p50>0)? ((sell - p50)/p50)*100 : null;          // ช่องว่างต่ำกว่า median-ask ที่ต้องชนะ
@@ -170,8 +173,11 @@ export function render(items, fetchCallback){
       if(roiOk) tr.classList.add("hl"); else if(nearBuy) tr.classList.add("hl-warn");
       const badges=[ roiOk? `<span class="badge badge-go">ROI≥${(s.hlRoi|0)}%</span>`:"", nearBuy? '<span class="badge badge-buy">Near BUY</span>':"" ].filter(Boolean).join("");
 
+      const favClass = isFav(o.name) ? "fav-active" : "fav-inactive";
+      const starHtml = `<span class="fav-star ${favClass}" style="cursor:pointer; margin-right:6px; font-size:16px">★</span>`;
+
       tr.innerHTML = `
-        <td>${o.name} ${badges}</td>
+        <td style="display:flex;align-items:center">${starHtml} ${o.name} ${badges}</td>
         <td class="muted">${o.apiId ?? "-"}</td>
         <td>${fmt(o.current)}</td>
         <td class="buy">${fmt(o.buy)}</td>
@@ -186,7 +192,16 @@ export function render(items, fetchCallback){
         <td>${o.ROI!=null? fmt(o.ROI*100,2): "-"}</td>
         <td>${(o.bgB!=null? fmt(o.bgB,1):"-")} / ${ (o.bgS!=null? fmt(o.bgS,1):"-") }%</td>
       `;
-      tr.addEventListener("click", () => showSelectedItem(o, tr));
+      tr.addEventListener("click", (e) => {
+        // Check if clicked on star
+        if(e.target.classList.contains("fav-star")){
+            e.stopPropagation();
+            toggleFav(o.name);
+            render(items, fetchCallback); // Re-render to update star or remove row if filtering
+            return;
+        }
+        showSelectedItem(o, tr);
+      });
       tb.appendChild(tr);
     }
 }
