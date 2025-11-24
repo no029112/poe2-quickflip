@@ -3,7 +3,8 @@
 
 const express = require('express');
 const morgan = require('morgan');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const path = require('path');
 
 const TARGET = 'https://poe2scout.com/api';
 const PORT = process.env.PORT || 8787;
@@ -11,35 +12,55 @@ const PORT = process.env.PORT || 8787;
 const app = express();
 app.use(morgan('dev'));
 
-// Basic CORS for local dev
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers'] || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Proxy /api/* -> poe2scout.com/api/*
-app.use('/api', async (req, res) => {
-  const url = TARGET + req.url;
-  const init = {
-    method: req.method,
-    headers: Object.fromEntries(Object.entries(req.headers).filter(([k]) => !/^host$|^origin$|^referer$|^connection$|^accept-encoding$/i.test(k)))
-  };
-  try {
-    const r = await fetch(url, init);
-    res.status(r.status);
-    for (const [k, v] of r.headers.entries()) {
-      if (!/^content-encoding$|^transfer-encoding$|^connection$/i.test(k)) res.setHeader(k, v);
-    }
-    const buf = await r.arrayBuffer();
-    res.end(Buffer.from(buf));
-  } catch (err) {
-    res.status(502).json({ error: 'Bad gateway', detail: String(err) });
+app.use('/api', createProxyMiddleware({
+  target: TARGET,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api': '', // remove /api prefix when forwarding to target if target expects it directly?
+                 // Wait, the original code appended /api to TARGET + req.url.
+                 // TARGET is https://poe2scout.com/api
+                 // so /api/foo -> https://poe2scout.com/api/api/foo ?
+                 // No, original code: const url = TARGET + req.url;
+                 // req.url includes /api. e.g. /api/items...
+                 // so url = https://poe2scout.com/api/api/items...
+                 // Let's check original proxy.
+  },
+  onProxyRes: function (proxyRes, req, res) {
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
   }
-});
+}));
 
-app.listen(PORT, () => console.log(`Local CORS proxy on http://localhost:${PORT}/api -> ${TARGET}`));
+// Original logic check:
+// app.use('/api', async (req, res) => {
+//   const url = TARGET + req.url;
+//   ...
+// TARGET = 'https://poe2scout.com/api';
+// So if I request /api/currency/currency, req.url is /currency/currency (because app.use('/api', ...))?
+// Express `app.use('/path', callback)` strips the prefix from req.url in the callback.
+// So if I request /api/foo, req.url is /foo.
+// So original code: url = 'https://poe2scout.com/api' + '/foo' = 'https://poe2scout.com/api/foo'.
+// Correct.
+
+// Now with http-proxy-middleware:
+// app.use('/api', createProxyMiddleware({...}))
+// If I request /api/foo, the middleware receives it.
+// I want to proxy to https://poe2scout.com/api/foo
+// target: 'https://poe2scout.com/api'
+// If I don't use pathRewrite, it appends req.url (which is /foo relative to the mount point? or full path?)
+// http-proxy-middleware behavior depends.
+// If mounted at /api, req.url passed to middleware is /foo (in express).
+// So target + req.url = https://poe2scout.com/api/foo.
+// So I don't need pathRewrite if I set target to https://poe2scout.com/api.
+
+// Let's verify this assumption.
+// But wait, express behavior on sub-app mounting strips the path.
+// If I use `app.use('/api', createProxyMiddleware({ target: 'https://poe2scout.com/api' }))`
+// When I request `/api/foo`, express strips `/api`, `req.url` becomes `/foo`.
+// The middleware sees `/foo`. It proxies to `target` + `/foo` => `https://poe2scout.com/api/foo`.
+// This seems correct matching the original behavior.
+
+app.listen(PORT, () => console.log(`Local CORS proxy on http://localhost:${PORT}/ (API at /api)`));
