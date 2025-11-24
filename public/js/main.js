@@ -5,6 +5,7 @@ import { render, buildRows, applyTooltips, buildCatPicker, summarizePair, popula
 import { API_BASE, PAIR_IDS } from './constants.js';
 
 let items=[]; // aggregated items
+let autoRefreshTimer = null;
 
 async function initLeagues(){
   try{
@@ -19,14 +20,45 @@ async function initLeagues(){
   }
 }
 
+function handleAutoRefresh(){
+  const s = getState();
+  if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+  if(s.autoRefresh && s.refreshInterval > 0){
+    autoRefreshTimer = setInterval(fetchAllPages, s.refreshInterval * 1000);
+  }
+}
+
 async function fetchAllPages(){
-    const s=getState(); $("#error").style.display="none"; $("#tbody").innerHTML='<tr><td colspan="14" class="muted">Loading…</td></tr>';
-    const endpoints=categoryToEndpoints(s); if(!endpoints.length){ $("#tbody").innerHTML='<tr><td colspan="14" class="muted">No category</td></tr>'; return; }
+    const s=getState();
+    $("#error").style.display="none";
+    // Only show loading text if it's a manual refresh or first load, not silent auto-refresh?
+    // Actually, users might want to know it's updating. Let's keep it simple for now.
+    // But if we wipe the table every time, it's annoying.
+    // Improvement: Show a small loader instead of wiping table if items exist.
+    if(items.length === 0) {
+        $("#tbody").innerHTML='<tr><td colspan="14" class="muted">Loading…</td></tr>';
+    } else {
+        // Maybe change button text?
+        $("#btnRefresh").textContent = "Refreshing...";
+    }
+
+    const endpoints=categoryToEndpoints(s);
+    if(!endpoints.length){ $("#tbody").innerHTML='<tr><td colspan="14" class="muted">No category</td></tr>'; return; }
+
     const aggregated=[]; let any=false, lastErr=null;
     for(const ep of endpoints){
       try{ const part=await fetchOneEndpoint(ep,s); aggregated.push(...part); any=true; }catch(e){ lastErr=e; }
     }
-    if(!any){ $("#error").textContent="Error: "+(lastErr?.message||lastErr||"fetch failed"); $("#error").style.display=""; $("#tbody").innerHTML='<tr><td colspan="14" class="muted">No data</td></tr>'; items=[]; return; }
+
+    $("#btnRefresh").textContent = "Refresh";
+
+    if(!any){
+        $("#error").textContent="Error: "+(lastErr?.message||lastErr||"fetch failed");
+        $("#error").style.display="";
+        if(items.length === 0) $("#tbody").innerHTML='<tr><td colspan="14" class="muted">No data</td></tr>';
+        // if we had items, keep them but show error?
+        return;
+    }
     items=aggregated;
     render(items, fetchAllPages);
 }
@@ -111,7 +143,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
     ["feeBuy","feeSell","divineRate","ref"].forEach(id=>{
       document.getElementById(id).addEventListener("input", ()=>{ render(items, fetchAllPages); });
     });
-    ["league","ref","perPage","tpPct","minAvgQty","hlRoi","hlBuyZone","maxS","maxB","hideNoBS","inclCurrency","inclUnique","buyCur","sellCur","goldEx","goldChaos","goldDiv","exPerDiv","chaosPerDiv"]
+    // Auto refresh listeners
+    $("#autoRefresh").addEventListener("change", handleAutoRefresh);
+    $("#refreshInterval").addEventListener("change", handleAutoRefresh);
+
+    ["league","ref","perPage","tpPct","minAvgQty","hlRoi","hlBuyZone","maxS","maxB","hideNoBS","inclCurrency","inclUnique","buyCur","sellCur","goldEx","goldChaos","goldDiv","exPerDiv","chaosPerDiv","showFav"]
       .forEach(id=>{
         const el=document.getElementById(id);
         el.addEventListener("change", ()=>{ render(items, fetchAllPages); });

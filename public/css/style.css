@@ -44,3 +44,8 @@ abbr[title]{
   text-underline-offset: 2px;
   cursor: help;
 }
+
+/* Favorites */
+.fav-active { color: #fbbf24; }
+.fav-inactive { color: #475569; }
+.fav-inactive:hover { color: #94a3b8; }

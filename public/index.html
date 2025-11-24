@@ -75,6 +75,11 @@
           <label for="hlBuyZone" style="margin:0">HL near BUY zone</label>
         </div>
 
+        <div style="display:flex;align-items:center;gap:8px;margin-top:18px">
+          <input type="checkbox" id="showFav" />
+          <label for="showFav" style="margin:0; color:#fbbf24">★ Favorites</label>
+        </div>
+
         <!-- pcs/D filters -->
         <div>
           <label>Max S (pcs/D)</label>
@@ -91,6 +96,11 @@
 
         <button class="primary" id="btnRefresh">Refresh</button>
         <button class="secondary" id="btnCsv">Download CSV</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:8px;border-left:1px solid #334155;padding-left:12px">
+          <input type="checkbox" id="autoRefresh" />
+          <label for="autoRefresh" style="margin:0;cursor:pointer">Auto (sec)</label>
+          <input type="number" id="refreshInterval" value="60" style="width:60px" min="10" />
+        </div>
       </div>
       <p id="error" class="error" style="margin-top:8px; display:none"></p>
     </div>

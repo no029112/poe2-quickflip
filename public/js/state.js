@@ -14,8 +14,11 @@ export function getState(){
     feeSell: Number($("#feeSell").value||0)/100,
     divineRate: Number($("#divineRate").value)||null,
     // highlight & filters
+    autoRefresh: $("#autoRefresh").checked,
+    refreshInterval: Number($("#refreshInterval").value)||60,
     hlRoi: Number($("#hlRoi").value||0),
     hlBuyZone: $("#hlBuyZone").checked,
+    showFav: $("#showFav").checked,
     maxS: Number($("#maxS").value||0),
     maxB: Number($("#maxB").value||0),
     hideNoBS: $("#hideNoBS").checked,
