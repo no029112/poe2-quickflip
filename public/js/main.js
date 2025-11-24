@@ -1,10 +1,23 @@
 import { $, csvEscape } from './utils.js';
 import { getState } from './state.js';
-import { fetchOneEndpoint, fetchPairHistory, categoryToEndpoints } from './api.js';
-import { render, buildRows, applyTooltips, buildCatPicker, summarizePair } from './ui.js';
+import { fetchOneEndpoint, fetchPairHistory, categoryToEndpoints, fetchLeagues } from './api.js';
+import { render, buildRows, applyTooltips, buildCatPicker, summarizePair, populateLeagues } from './ui.js';
 import { API_BASE, PAIR_IDS } from './constants.js';
 
 let items=[]; // aggregated items
+
+async function initLeagues(){
+  try{
+    const list = await fetchLeagues();
+    populateLeagues(list);
+    // After populating, we should fetch data for the selected league
+    fetchAllPages();
+  }catch(e){
+    console.error("Fetch leagues failed", e);
+    // Fallback: continue with default hardcoded value or empty
+    fetchAllPages();
+  }
+}
 
 async function fetchAllPages(){
     const s=getState(); $("#error").style.display="none"; $("#tbody").innerHTML='<tr><td colspan="14" class="muted">Loading…</td></tr>';
@@ -84,7 +97,7 @@ async function autoRatesFromPairHistory(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
     buildCatPicker(fetchAllPages);
-    fetchAllPages(); // Load data on startup
+    initLeagues(); // Load leagues then data
     applyTooltips();
 
     // Events

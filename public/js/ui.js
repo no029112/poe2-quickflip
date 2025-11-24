@@ -4,6 +4,23 @@ import { CATS } from './constants.js';
 
 let selectedRowEl = null;
 
+export function populateLeagues(leagues){
+  const sel = $("#league");
+  const current = sel.value;
+  sel.innerHTML = "";
+  leagues.forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = l.value;
+    opt.textContent = l.value; // + (l.divinePrice ? ` (1D=${l.divinePrice})` : "");
+    if(l.value === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // If current value is not in the list, select the first one?
+  if(!leagues.some(l=>l.value===current) && leagues.length > 0){
+    sel.value = leagues[0].value;
+  }
+}
+
 // แปลง history -> อัตรา (two per one) แบบทน outlier + อิงปริมาณ
 export function summarizePair(history){
     if (!history.length) return null;

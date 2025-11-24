@@ -38,3 +38,10 @@ export async function fetchPairHistory(league, oneId, twoId, limit=300, endEpoch
   const data = await r.json();
   return (data && Array.isArray(data.History)) ? data.History : [];
 }
+
+export async function fetchLeagues(){
+  const url = `${API_BASE}/leagues`;
+  const res = await fetch(url, { headers: {Accept:"application/json"} });
+  if (!res.ok) throw new Error(res.status + " " + res.statusText);
+  return await res.json();
+}
