@@ -66,34 +66,34 @@ async function autoRates(){
     }catch(e){ $("#error").textContent="Auto rates failed: "+(e.message||e); $("#error").style.display=""; }
 }
 
-async function autoRatesFromPairHistory(){
-    const s = getState();
-    try{
-      const hx = await fetchPairHistory(s.league, PAIR_IDS.divine, PAIR_IDS.exalted, 10, null);
-      const sx = summarizePair(hx); // ได้ "Ex per 1 Divine" ที่ robust
-      // Divine→Chaos
-      const hc = await fetchPairHistory(s.league, PAIR_IDS.divine, PAIR_IDS.chaos, 10, null);
-      const sc = summarizePair(hc); // ได้ "Chaos per 1 Divine"
+// async function autoRatesFromPairHistory(){
+//     const s = getState();
+//     try{
+//       const hx = await fetchPairHistory(s.league, PAIR_IDS.divine, PAIR_IDS.exalted, 10, null);
+//       const sx = summarizePair(hx); // ได้ "Ex per 1 Divine" ที่ robust
+//       // Divine→Chaos
+//       const hc = await fetchPairHistory(s.league, PAIR_IDS.divine, PAIR_IDS.chaos, 10, null);
+//       const sc = summarizePair(hc); // ได้ "Chaos per 1 Divine"
 
-      if (sx?.median) document.getElementById("exPerDiv").value = sx.median.toFixed(3);
-      if (sc?.median) document.getElementById("chaosPerDiv").value = sc.median.toFixed(3);
+//       if (sx?.median) document.getElementById("exPerDiv").value = sx.median.toFixed(3);
+//       if (sc?.median) document.getElementById("chaosPerDiv").value = sc.median.toFixed(3);
 
 
-      $("#orderCostOut1").innerHTML  = `
-        <div class="card" style="flex:1">
-          <div class="muted">PairHistory snapshot</div>
-          <div>Ex/1D ~ median ${sx? sx.median.toFixed(3): "-"} (IQR ${sx? (sx.p25.toFixed(3)+"–"+sx.p75.toFixed(3)):"-"})</div>
-          <div>Chaos/1D ~ median ${sc? sc.median.toFixed(3): "-"} (IQR ${sc? (sc.p25.toFixed(3)+"–"+sc.p75.toFixed(3)):"-"})</div>
-        </div>`;
+//       $("#orderCostOut1").innerHTML  = `
+//         <div class="card" style="flex:1">
+//           <div class="muted">PairHistory snapshot</div>
+//           <div>Ex/1D ~ median ${sx? sx.median.toFixed(3): "-"} (IQR ${sx? (sx.p25.toFixed(3)+"–"+sx.p75.toFixed(3)):"-"})</div>
+//           <div>Chaos/1D ~ median ${sc? sc.median.toFixed(3): "-"} (IQR ${sc? (sc.p25.toFixed(3)+"–"+sc.p75.toFixed(3)):"-"})</div>
+//         </div>`;
 
-      render(items, fetchAllPages);
+//       render(items, fetchAllPages);
 
-    }catch(e){
-      const err = document.getElementById("error");
-      err.textContent = "PairHistory failed: " + (e.message||e);
-      err.style.display = "";
-    }
-}
+//     }catch(e){
+//       const err = document.getElementById("error");
+//       err.textContent = "PairHistory failed: " + (e.message||e);
+//       err.style.display = "";
+//     }
+// }
 
 document.addEventListener("DOMContentLoaded", ()=>{
     buildCatPicker(fetchAllPages);
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     applyTooltips();
 
     // Events
-    document.getElementById("btnAutoRatesPH").addEventListener("click", autoRatesFromPairHistory);
+    //document.getElementById("btnAutoRatesPH").addEventListener("click", autoRatesFromPairHistory);
     $("#btnRefresh").addEventListener("click", fetchAllPages);
     $("#btnCsv").addEventListener("click", ()=>{ const rows=buildRows(items); if(!rows.length) return; const headers=["Item","API ID","Last (Ex)","BUY ≤ (Ex)","SELL ≥ (Ex)","P10","P25","P50","P75","Avg Qty","B (pcs/D)","S (pcs/D)","ROI_net %","BlockGapB %","BlockGapS %"]; const body=rows.map(o=>[o.name,o.apiId,o.current,o.buy,o.sell,o.p10,o.p25,o.p50,o.p75,Math.round(o.avgQty),o.B,o.S,(o.ROI!=null?(o.ROI*100).toFixed(2):""),(o.bgB!=null?o.bgB.toFixed(1):""),(o.bgS!=null?o.bgS.toFixed(1):"")]); const csv=[headers.map(csvEscape).join(","), ...body.map(r=>r.map(csvEscape).join(","))].join("\n"); const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="poe2_quickflip.csv"; a.click(); URL.revokeObjectURL(url); });
 

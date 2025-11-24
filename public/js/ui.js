@@ -74,11 +74,11 @@ export function computeBS(p25,p50,p75,tpPct,divineRate,fb,fs){
 
 export function unitsPer1D(cur,s){ if(cur==="divine") return 1; if(cur==="exalted") return s.exPerDiv||null; if(cur==="chaos") return s.chaosPerDiv||null; return null; }
 
-export function goldPer1D(cur,s){
-    const units=unitsPer1D(cur,s); if(!(units>0)) return null;
-    const gpUnit = cur==="divine" ? s.goldDiv : cur==="exalted" ? s.goldEx : s.goldChaos;
-    return gpUnit*units;
-}
+// export function goldPer1D(cur,s){
+//     const units=unitsPer1D(cur,s); if(!(units>0)) return null;
+//     const gpUnit = cur==="divine" ? s.goldDiv : cur==="exalted" ? s.goldEx : s.goldChaos;
+//     return gpUnit*units;
+// }
 
 export function buildRows(items){
     const s=getState(); const out=[];
@@ -152,14 +152,14 @@ export function showSelectedItem(o, tr){
 export function render(items, fetchCallback){
     const s=getState(); const rows=buildRows(items); const tb=$("#tbody"); tb.innerHTML="";
     // Order currency summary
-    const gBuy = goldPer1D(s.buyCur,s); const gSell= goldPer1D(s.sellCur,s);
-    $("#orderCostOut").innerHTML = `
-      <div class="card" style="flex:1">
-        <div class="muted">Order currency (per 1 Divine notional)</div>
-        <div>Buy in <b>${s.buyCur}</b> → Gold/1D: <b>${gBuy!=null? fmt(gBuy,0):'-'}</b></div>
-        <div>Sell in <b>${s.sellCur}</b> → Gold/1D: <b>${gSell!=null? fmt(gSell,0):'-'}</b></div>
-      </div>
-    `;
+    // const gBuy = goldPer1D(s.buyCur,s); const gSell= goldPer1D(s.sellCur,s);
+    // $("#orderCostOut").innerHTML = `
+    //   <div class="card" style="flex:1">
+    //     <div class="muted">Order currency (per 1 Divine notional)</div>
+    //     <div>Buy in <b>${s.buyCur}</b> → Gold/1D: <b>${gBuy!=null? fmt(gBuy,0):'-'}</b></div>
+    //     <div>Sell in <b>${s.sellCur}</b> → Gold/1D: <b>${gSell!=null? fmt(gSell,0):'-'}</b></div>
+    //   </div>
+    // `;
 
     if(!rows.length){ tb.innerHTML='<tr><td colspan="14" class="muted">No data (check proxy or filters)</td></tr>'; return; }
     for(const o of rows){
