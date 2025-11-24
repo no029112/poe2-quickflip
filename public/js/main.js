@@ -1,7 +1,7 @@
 import { $, csvEscape } from './utils.js';
 import { getState } from './state.js';
 import { fetchOneEndpoint, fetchPairHistory, categoryToEndpoints } from './api.js';
-import { render, buildRows, computeRatio, applyTooltips, buildCatPicker, summarizePair } from './ui.js';
+import { render, buildRows, applyTooltips, buildCatPicker, summarizePair } from './ui.js';
 import { API_BASE, PAIR_IDS } from './constants.js';
 
 let items=[]; // aggregated items
@@ -29,7 +29,7 @@ async function autoDivine(){
         for(const it of items){ const id=(it.apiId||"").toLowerCase(); const name=(it.text||"").toLowerCase(); if(id.includes("divine")||name.includes("divine orb")){ found=Number(it.currentPrice); break; } }
         if(items.length<25) break; page++;
       }
-      if(found){ $("#divineRate").value=String(found); computeRatio(); render(items, fetchAllPages); }
+      if(found){ $("#divineRate").value=String(found); render(items, fetchAllPages); }
       else throw new Error("ไม่พบราคา Divine ในหน้าแรก");
     }catch(e){ $("#error").textContent="Auto Divine failed: "+(e.message||e); $("#error").style.display=""; }
 }
@@ -85,7 +85,6 @@ async function autoRatesFromPairHistory(){
 document.addEventListener("DOMContentLoaded", ()=>{
     buildCatPicker(fetchAllPages);
     fetchAllPages(); // Load data on startup
-    computeRatio();
     applyTooltips();
 
     // Events
@@ -96,13 +95,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#btnAutoDiv").addEventListener("click", autoDivine);
     $("#btnAutoRates").addEventListener("click", autoRates);
 
-    ["ratioB","ratioS","feeBuy","feeSell","divineRate","ref"].forEach(id=>{
-      document.getElementById(id).addEventListener("input", ()=>{ computeRatio(); render(items, fetchAllPages); });
+    ["feeBuy","feeSell","divineRate","ref"].forEach(id=>{
+      document.getElementById(id).addEventListener("input", ()=>{ render(items, fetchAllPages); });
     });
     ["league","ref","perPage","tpPct","minAvgQty","hlRoi","hlBuyZone","maxS","maxB","hideNoBS","inclCurrency","inclUnique","buyCur","sellCur","goldEx","goldChaos","goldDiv","exPerDiv","chaosPerDiv"]
       .forEach(id=>{
         const el=document.getElementById(id);
-        el.addEventListener("change", ()=>{ computeRatio(); render(items, fetchAllPages); });
-        el.addEventListener("input",  ()=>{ computeRatio(); render(items, fetchAllPages); });
+        el.addEventListener("change", ()=>{ render(items, fetchAllPages); });
+        el.addEventListener("input",  ()=>{ render(items, fetchAllPages); });
       });
 });

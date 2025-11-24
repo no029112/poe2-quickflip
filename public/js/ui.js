@@ -103,42 +103,6 @@ export function buildRows(items){
 
 export const fmtNum=(n,d=4)=>fmt(n,d);
 
-export function computeRatio(){
-    const B=Math.max(0,Number($("#ratioB").value)||0);
-    const S=Math.max(0,Number($("#ratioS").value)||0);
-    const fb=Math.max(0,Number($("#feeBuy").value)||0)/100;
-    const fs=Math.max(0,Number($("#feeSell").value)||0)/100;
-    const rate=Number($("#divineRate").value)||null;
-    if(!B||!S){ $("#ratioOut").innerHTML=""; return; }
-    const buyDiv=1/B, sellDiv=1/S;
-    const grossROI=(B/S)-1;
-    const netROI=(B/S)*((1-fs)/(1+fb))-1;
-    const profitPerDiv=(B/S)*(1-fs)-(1+fb);
-    const Sbreak=B*(1-fs)/(1+fb);
-    const go= S <= (Sbreak*0.99);
-    const s=getState(); const buyRef=rate? buyDiv*rate : null; const sellRef=rate? sellDiv*rate : null;
-
-    $("#ratioOut").innerHTML = `
-      <div class="card" style="flex:1">
-        <div class="muted">ราคาต่อชิ้น (Divine)</div>
-        <div>BUY ≤ <span class="ok" style="font-weight:600">${fmtNum(buyDiv)} D</span></div>
-        <div>SELL ≥ <span class="sell" style="font-weight:600">${fmtNum(sellDiv)} D</span></div>
-        ${rate? `<div class="muted" style="margin-top:6px">เทียบ ${s.ref}: BUY ${fmt(buyRef)} / SELL ${fmt(sellRef)}</div>`:""}
-      </div>
-      <div class="card" style="flex:1">
-        <div class="muted">ผลตอบแทน</div>
-        <div>ROI (gross): <b>${fmt(grossROI*100,2)}%</b></div>
-        <div>ROI (net): <b>${fmt(netROI*100,2)}%</b></div>
-        <div>กำไร/เงินลง (ต่อ 1 D): <b>${fmt(profitPerDiv,4)} D</b></div>
-      </div>
-      <div class="card" style="flex:1">
-        <div class="muted">ความเสี่ยง & จุดคุ้มทุน</div>
-        <div>Break-even S ≤ <b>${fmt(Sbreak,2)}</b> pcs/D</div>
-        <div class="${go?'ok':'warn'}" style="margin-top:6px; font-weight:700">${go? 'GO (ผ่าน buffer 1%)':'WAIT (ใกล้เส้นคุ้มทุน)'}</div>
-      </div>
-    `;
-}
-
 export function showSelectedItem(o, tr){
     // ไฮไลต์แถวที่เลือก
     if (selectedRowEl) selectedRowEl.classList.remove("selected");
@@ -166,15 +130,6 @@ export function showSelectedItem(o, tr){
     document.getElementById("selApi").textContent  = o.apiId ? `API: ${o.apiId}` : "";
     document.getElementById("selStats").innerHTML  = statsHtml;
     document.getElementById("selWrap").style.display = "";
-
-    // กรอก B/S เข้าช่อง Kulemak (ถ้ามี)
-    if (o.B != null) document.getElementById("ratioB").value = String(o.B);
-    if (o.S != null) document.getElementById("ratioS").value = String(o.S);
-
-    // คำนวณพาเนล Kulemak ใหม่ด้วยค่า B/S ที่ตั้งให้
-    computeRatio();
-    // เลื่อน scroll ให้เห็นพาเนล (ถ้าอยาก)
-    // document.getElementById("selWrap").scrollIntoView({ behavior:"smooth", block:"center" });
 }
 
 export function render(items, fetchCallback){
@@ -292,9 +247,7 @@ export function applyTooltips(){
     L('maxB',        'ตัดรายการที่ B (pcs/D) สูงกว่าเกณฑ์นี้ (ซื้อย่อยเกินไป)');
     L('hideNoBS',    'ซ่อนรายการที่ยังไม่สามารถคำนวณ B/S ได้ (ยังไม่มี Divine rate/P25/P50)');
 
-    // Kulemak Ratio
-    L('ratioB',      'จำนวนชิ้นที่ “ตั้งใจซื้อได้” ต่อ 1 Divine ในแผนของคุณ');
-    L('ratioS',      'จำนวนชิ้นที่ “ต้องขาย” ต่อ 1 Divine เพื่อคืนทุน/ทำกำไร');
+    // Rate Settings
     L('feeBuy',      'ค่าธรรมเนียม/ภาษีฝั่งซื้อ (%)');
     L('feeSell',     'ค่าธรรมเนียมฝั่งขาย (%)');
     L('divineRate',  '1 Divine เท่ากับกี่หน่วยในสกุลอ้างอิง (ใช้คำนวณทุกแถวในตาราง)');
